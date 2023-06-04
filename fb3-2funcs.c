@@ -21,7 +21,7 @@
 struct symbol symtab[NHASH];
 
 //global stack array & top index
-int stack[MAX];
+double stack[MAX];
 int top;
 
 extern int flexVal;
@@ -42,7 +42,7 @@ void init_stack(void)
 }
 
 //push stack
-int push(int t)
+double push(double t)
 {
 	if(top >= MAX-1)
 	{
@@ -57,7 +57,7 @@ int push(int t)
 
 
 //pop stack
-int pop(void)
+double pop(void)
 {
 	if(top < 0)
 	{
@@ -69,22 +69,22 @@ int pop(void)
 }
 
 //Get a top of stack val 
-int get_stack_top(void)
+double get_stack_top(void)
 {
 	return (top < 0) ? -1 : stack[top];
 }
 
 //Check Empty state in Stack 
-int is_stack_empty(void)
+double is_stack_empty(void)
 {
 	return (top < 0);
 }
 
 
 //Check Argument Whether is operator
-int is_operator(int k)
+char is_operator(char k)
 {
-	int retVal = 0;
+	char retVal = 0;
 	
 	switch(k)
 	{
@@ -108,7 +108,7 @@ int is_operator(int k)
 }
 
 //
-int is_legal(char *s)
+double is_legal(char *s)
 {
 	int f = 0;
 	
@@ -139,7 +139,7 @@ int is_legal(char *s)
 }
 
 
-int precedence(int op)
+double precedence(double op)
 {
 	if(op == '(')
 		return 0;
@@ -196,6 +196,10 @@ void postfix(char *dst, char *src)
 			
 			*dst++ = ' ';
 		}
+		else if(*src == '.')
+		{
+			*dst++ = *src++;
+		}
 		else
 		{
 			src++;
@@ -212,58 +216,146 @@ void postfix(char *dst, char *src)
 	*dst = 0;
 }
 
-
-int calc(char *p)
+void removeSpace(char* p)
 {
-	int i;
+	int i = 0;
+	int j = 0;
+	int k = 0;
+	
+	
+	for(i=0; i < 100; i++)
+	{
+		if(p[i] == '\0')
+			break;
+	}
+	
+	//printf("%d\n", i);
+		
+
+
+	for(j=0; j < i; j++)
+	{
+		if(p[j] == ' ')
+		{
+			for(k=j; k < i; k++)
+			{
+				p[k] = p[k+1];
+				
+			}
+		}
+		
+	}
+
+}
+
+
+double calc(char *p)
+{
+	double i=0;
+	double u=0; 
+	double d=0;
+	double k=0.1;
+	char pointFlag=0;
+	char resetFlag=0;
 	init_stack();
 	
+	//printf("calc str1:%s\n", p);
+	
+	//removeSpace(p);
+	
+	printf("calc str2:%s\n", p);
+
+	
 	while(*p)
-	{
-		if(*p >= '0' && *p <= '9')
+	{	
+		if(*p == '.')
 		{
-			i=0;
+			printf("Point Flag\n");
+			pointFlag = 1;
+			p++;			
+		}
+		else if(*p == ' ')
+		{
+			printf("Space Flag\n");
 			
-			do{
-				i=i*10+*p-'0';
+			if(pointFlag)
+			{
+				printf("Reset Flag\n");			
+				pointFlag = 0;
+				resetFlag = 1;
+			}
+			else
+			{
 				p++;
-			}while(*p >= '0' && *p <= '9');
+			}
 			
-		push(i);
+			
+		}
+		
+		if(resetFlag)
+		{
+			
+			printf("calc:%lf\n", i);
+			
+			push(i);
+			resetFlag = 0;
+			d=0;
+			u=0;
+			k=0.1;
+			
+			p++;
+		}
+
+		if(*p >= '0' && *p <= '9')
+		{		
+
+			if(!pointFlag)
+			{					
+				d = d*10 + *p-'0';
+				printf("val:%lf\n", d);
+			}
+			else
+			{
+				printf("P!\n");
+				u = u + (*p-'0')*k;
+				k = k*0.1;
+				printf("..val:%lf\n", u);
+				//pointFlag = 0;
+			}
+			
+			i = d + u;
+			
+			p++;
 		}
 		else if(*p == '+')
 		{
-			push(pop() + pop());
+			push((double)(pop() + pop()));
 			p++;
 		}
 		else if(*p == '*')
 		{
-			push(pop()*pop());
+			push((double)(pop()*pop()));
 			p++;
 		}
 		else if(*p == '-')
 		{
 			i = pop();
-			push(pop() - i);
+			push((double)(pop() - i));
 			p++;
 		}
 		else if(*p == '/')
 		{
 			i = pop();
-			push(pop()/i);
+			push((double)(pop()/i));
 			p++;
 		}
-		else
-		{
-			p++;
-		}
+		
 	}
 	
 	return pop();
+	
 }
-		
-
-		
+			
 
 /* hash a symbol */
 static unsigned
@@ -697,7 +789,7 @@ int main(int argc, char **argv)
 {
 
 	int tok;
-	int result=0;
+	double result=0;
 	char* sbuf[2000]={0};
 	char* dbuf[2000]={0};
 
@@ -722,11 +814,13 @@ int main(int argc, char **argv)
 	while(tok = yylex()) 
 	{
 		if(tok == PRINTF)
-			printf("= %d", result);
+			printf("= %lf", result);
 		else if(tok == SCANF)
 		{
 			scanf("%s", sbuf);
 			postfix(dbuf, sbuf);
+			is_legal(dbuf);
+
 			result = calc(dbuf);
 		}
 	
